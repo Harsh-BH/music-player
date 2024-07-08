@@ -1,0 +1,40 @@
+.home {
+  width: 40%;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  max-height: calc(100vh - 100px);
+}
+
+.home h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.song-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.song-item {
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.song-item p {
+  margin: 0 0 10px 0;
+  font-weight: bold;
+  color: #555;
+}
+
+.song-item audio {
+  width: 100%;
+}
