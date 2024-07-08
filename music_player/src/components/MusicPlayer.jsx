@@ -1,123 +1,46 @@
-import React, { useState, useRef, useEffect } from "react";
-import { storage, db } from "../firebaseConfig";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, getDocs } from "firebase/firestore";
-import "./MusicPlayer.css";
+// src/components/MusicPlayer.js
+import React, { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebaseConfig";
 
-function MusicPlayer() {
-  const [audioUrl, setAudioUrl] = useState(null);
-  const [file, setFile] = useState(null);
+const MusicPlayer = () => {
   const [songs, setSongs] = useState([]);
-  const [currentSongIndex, setCurrentSongIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [currentSong, setCurrentSong] = useState(null);
 
-  const audioRef = useRef();
+  const fetchSongs = async () => {
+    const querySnapshot = await getDocs(collection(db, "songs"));
+    const songsList = querySnapshot.docs.map((doc) => doc.data());
+    setSongs(songsList);
+  };
 
   useEffect(() => {
-    const fetchSongs = async () => {
-      const querySnapshot = await getDocs(collection(db, "musicFiles"));
-      const songsList = querySnapshot.docs.map((doc) => doc.data());
-      setSongs(songsList);
-      if (songsList.length > 0) {
-        setAudioUrl(songsList[0].url);
-      }
-    };
-
     fetchSongs();
   }, []);
 
-  const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
+  const playSong = (url) => {
+    setCurrentSong(url);
   };
-
-  const handleUpload = async () => {
-    if (file) {
-      const storageRef = ref(storage, `music/${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await addDoc(collection(db, "musicFiles"), {
-        name: file.name,
-        url: url,
-      });
-      setSongs([...songs, { name: file.name, url: url }]);
-      setFile(null);
-    }
-  };
-
-  const playPause = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
-
-  const nextSong = () => {
-    const nextIndex = (currentSongIndex + 1) % songs.length;
-    setCurrentSongIndex(nextIndex);
-    setAudioUrl(songs[nextIndex].url);
-    setIsPlaying(false);
-  };
-
-  const prevSong = () => {
-    const prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-    setCurrentSongIndex(prevIndex);
-    setAudioUrl(songs[prevIndex].url);
-    setIsPlaying(false);
-  };
-
-  const handleVolumeChange = (e) => {
-    const volumeValue = e.target.value;
-    setVolume(volumeValue);
-    audioRef.current.volume = volumeValue;
-  };
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.addEventListener("ended", nextSong);
-    }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener("ended", nextSong);
-      }
-    };
-  }, [audioRef, nextSong]);
 
   return (
-    <div className="music-player">
-      <h2>Upload a New Song</h2>
-      <input type="file" accept="audio/*" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload</button>
-      <div className="player-controls">
-        {audioUrl && (
-          <div>
-            <p>{songs[currentSongIndex]?.name}</p>
-            <audio ref={audioRef} src={audioUrl} controls hidden></audio>
-            <button onClick={prevSong}>Previous</button>
-            <button onClick={playPause}>{isPlaying ? "Pause" : "Play"}</button>
-            <button onClick={nextSong}>Next</button>
-            <div className="volume-control">
-              <label htmlFor="volume">Volume</label>
-              <input
-                type="range"
-                id="volume"
-                name="volume"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={handleVolumeChange}
-              />
-            </div>
+    <div className="music-player-container">
+      <div className="song-list">
+        {songs.map((song, index) => (
+          <div className="song" key={index} onClick={() => playSong(song.url)}>
+            {song.name}
           </div>
-        )}
+        ))}
+      </div>
+      <div className="player-controls">
+        {currentSong && <audio controls src={currentSong} />}
+        <div className="progress-bar"></div>
+        <div className="controls">
+          <button className="control-button">Back</button>
+          <button className="control-button">Play</button>
+          <button className="control-button">Next</button>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default MusicPlayer;
